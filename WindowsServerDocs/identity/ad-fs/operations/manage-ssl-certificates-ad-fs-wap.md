@@ -34,6 +34,21 @@ For requirements including naming, root of trust and extensions see the document
 > The AD FS SSL certificate is not the same as the AD FS Service communications certificate found in the AD FS Management snap-in. To change the AD FS SSL certificate, you will need to use PowerShell.
 
 First, determine which certificate binding mode your AD FS servers are running: default certificate authentication binding, or alternate client TLS binding mode.
+You can enumerate the currently used certificate binding mode by reading the TlsClientPort property.
+
+```powershell
+(get-adfsproperties).TlsClientPort
+```
+If the value returned is 49443 or any another port that is not 443, you are using the default certificate authentication binding mode
+If the value returned is 443 you are using the alternate TLS binding mode
+
+> [!CAUTION]
+> If the Farm was originally set up with the alternate TLS binding mode, running the Set-AdfsSslCertificate may cause the farm to not properly render the ADFS pages.
+> It may also cause endpoints not being published correctly or prevent the proxy trust from operating as expected.
+>
+> If you intend to migrate from the alternate TLS binding mode to the default Binding mode, you additionally need to create the URL reservation for the Port 49443
+> you can do so by running the command:  **netsh http add urlacl url=https://+:49443/adfs/ user="NT SERVICE\adfssrv" delegate=yes**
+> Repeat this step on each ADFS and WebApplicationProxy server.
 
 ### Replacing the SSL certificate for AD FS running in default certificate authentication binding mode
 AD FS by default performs device certificate authentication on port 443 and user certificate authentication on port 49443 (or a configurable port that is not 443).
